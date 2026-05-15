@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  username         String             @unique
+  email            String             @unique
+  current_streak   Int                @default(0)
+  last_login       DateTime?
+  join_date        DateTime           @default(now())
+  attempts         Attempt[]
+  achievements     User_Achievement[]
+  friendships_init Friendship[]       @relation("User1Friendships")
+  friendships_recv Friendship[]       @relation("User2Friendships")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  levels      Level[]
+  questions   Question[]
+}
+
+model Level {
+  id               Int       @id @default(autoincrement())
+  name             String
+  difficulty_level String
+  category_id      Int
+  category         Category  @relation(fields: [category_id], references: [id])
+  attempts         Attempt[]
+
+  @@map("Levels")
+}
+
+model Attempt {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  level_id   Int
+  time_taken Int      // in milliseconds
+  is_success Boolean
+  score      Int
+  user       User     @relation(fields: [user_id], references: [id])
+  level      Level    @relation(fields: [level_id], references: [id])
+}
+
+model Achievement {
+  id               Int                @id @default(autoincrement())
+  badge_name       String
+  criteria         String
+  user_achievements User_Achievement[]
+}
+
+model User_Achievement {
+  unlock_id      Int         @id @default(autoincrement())
+  user_id        Int
+  achievement_id Int
+  user           User        @relation(fields: [user_id], references: [id])
+  achievement    Achievement @relation(fields: [achievement_id], references: [id])
+}
+
+model Friendship {
+  id        Int    @id @default(autoincrement())
+  user_id_1 Int
+  user_id_2 Int
+  status    String // e.g., PENDING, ACCEPTED, BLOCKED
+  user_1    User   @relation("User1Friendships", fields: [user_id_1], references: [id])
+  user_2    User   @relation("User2Friendships", fields: [user_id_2], references: [id])
+}
+
+model Question {
+  id             Int      @id @default(autoincrement())
+  text           String
+  options        String[] // Array of 4 possible answers
+  correct_answer String
+  category_id    Int
+  category       Category @relation(fields: [category_id], references: [id])
+}
