@@ -222,11 +222,12 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
     });
 
     const leaderboard = topUsers.map(user => {
-      const totalScore = user.attempts.reduce((sum, att) => sum + att.score, 0);
+      const attempts = user.attempts || [];
+      const totalScore = attempts.reduce((sum, att) => sum + (att.score || 0), 0);
       return {
         id: user.id,
         username: user.username,
-        current_streak: user.current_streak,
+        current_streak: user.current_streak || 0,
         totalScore,
       };
     });
@@ -234,7 +235,7 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
     res.json(leaderboard);
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
   }
 });
 
@@ -276,7 +277,7 @@ router.post('/friends/request', async (req: Request, res: Response) => {
     res.json(newRequest);
   } catch (error) {
     console.error('Error requesting friendship:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
   }
 });
 
@@ -305,7 +306,7 @@ router.put('/friends/accept', async (req: Request, res: Response) => {
     res.json(updated);
   } catch (error) {
     console.error('Error accepting friendship:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
   }
 });
 
@@ -333,18 +334,19 @@ router.get('/users/:id/profile', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const achievements = user.achievements || [];
     const profile = {
       id: user.id,
       username: user.username,
-      current_streak: user.current_streak,
+      current_streak: user.current_streak || 0,
       join_date: user.join_date,
-      unlockedBadges: user.achievements.map(ua => ua.achievement),
+      unlockedBadges: achievements.map(ua => ua.achievement).filter(Boolean),
     };
 
     res.json(profile);
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
   }
 });
 
