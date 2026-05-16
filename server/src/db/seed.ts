@@ -19,12 +19,12 @@ async function main() {
   const [cppCategory] = await db.insert(categories).values({
     name: 'C++',
     description: 'Learn C++ programming from basics to advanced',
-  }).returning();
+  } as any).returning();
 
   const [webDevCategory] = await db.insert(categories).values({
     name: 'Web Development',
     description: 'HTML, CSS, JavaScript, and React',
-  }).returning();
+  } as any).returning();
 
   // 2. Create Levels for C++ Category
   await db.insert(levels).values([
@@ -52,21 +52,21 @@ async function main() {
     email: 'elite99@example.com',
     current_streak: 15,
     join_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), 
-  }).returning();
+  } as any).returning();
 
   const [user2] = await db.insert(users).values({
     username: 'SyntaxTerror',
     email: 'syntax@example.com',
     current_streak: 12,
     join_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-  }).returning();
+  } as any).returning();
 
   const [user3] = await db.insert(users).values({
     username: 'LogicMaster',
     email: 'logic@example.com',
     current_streak: 8,
     join_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-  }).returning();
+  } as any).returning();
 
   // 5. Create Attempts
   await db.insert(attempts).values([
