@@ -49,13 +49,13 @@ const MOCK_STATS: UserStats = {
   ]
 };
 
+import { useUser } from '../context/UserContext';
+
 export default function Dashboard() {
+  const { userId } = useUser();
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [stats, setStats] = useState<UserStats>(MOCK_STATS);
   const [loading, setLoading] = useState(true);
-
-  // We assume user 1 for demo purposes
-  const userId = 1;
 
   useEffect(() => {
     // Attempt to fetch from real backend, fallback to mock data on error
@@ -80,7 +80,7 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [userId]);
 
   if (loading) return <div className="text-center py-20 animate-pulse text-primary-400">Loading Dashboard...</div>;
 

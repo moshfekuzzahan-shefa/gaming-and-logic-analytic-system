@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { 
   users, categories, levels, attempts, achievements, userAchievements, friendships, questions 
-} from '../db/schema';
+} from '../db/schema/index';
 import { eq, or, and, desc, sql } from 'drizzle-orm';
 
 const router = Router();
@@ -18,6 +18,33 @@ router.get('/levels', async (req: Request, res: Response) => {
     res.json(categoriesWithLevels);
   } catch (error) {
     console.error('Error fetching levels:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/levels/:id: Returns details for a specific level
+router.get('/levels/:id', async (req: Request, res: Response) => {
+  const levelId = parseInt(req.params.id as string);
+
+  if (isNaN(levelId)) {
+    return res.status(400).json({ error: 'Invalid level ID' });
+  }
+
+  try {
+    const level = await db.query.levels.findFirst({
+      where: eq(levels.id, levelId),
+      with: {
+        category: true,
+      }
+    });
+
+    if (!level) {
+      return res.status(404).json({ error: 'Level not found' });
+    }
+
+    res.json(level);
+  } catch (error) {
+    console.error('Error fetching level:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

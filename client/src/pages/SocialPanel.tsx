@@ -25,15 +25,14 @@ const MOCK_PENDING: PendingRequest[] = [
   { friendship_id: 202, sender_id: 5, sender_username: 'CPlusPlusPro', sender_streak: 5 },
 ];
 
+import { useUser } from '../context/UserContext';
+
 export default function SocialPanel() {
+  const { userId } = useUser();
   const [activeTab, setActiveTab] = useState<'friends' | 'pending'>('friends');
-  
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Assuming logged in user is ID 1
-  const userId = 1;
 
   useEffect(() => {
     const fetchSocialData = async () => {

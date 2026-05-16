@@ -4,8 +4,11 @@ import LevelExecution from './pages/LevelExecution';
 import Quiz from './pages/Quiz';
 import Leaderboard from './pages/Leaderboard';
 import SocialPanel from './pages/SocialPanel';
+import { useUser } from './context/UserContext';
 
 function App() {
+  const { userId, setUserId, availableUsers, username } = useUser();
+
   return (
     <Router>
       <div className="min-h-screen bg-dark-900 text-gray-100 font-sans">
@@ -18,6 +21,20 @@ function App() {
               <Link to="/" className="text-sm font-medium text-gray-300 hover:text-primary-400 transition-colors">Dashboard</Link>
               <Link to="/leaderboard" className="text-sm font-medium text-gray-300 hover:text-primary-400 transition-colors">Leaderboard</Link>
               <Link to="/social" className="text-sm font-medium text-gray-300 hover:text-primary-400 transition-colors">Network</Link>
+              
+              {/* User Switcher */}
+              <div className="flex items-center gap-2 pl-6 border-l border-white/10">
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Active:</span>
+                <select 
+                  value={userId} 
+                  onChange={(e) => setUserId(parseInt(e.target.value))}
+                  className="bg-dark-900 border border-white/10 rounded-lg px-2 py-1 text-sm font-medium text-primary-400 outline-none hover:border-primary-500/50 transition-all cursor-pointer"
+                >
+                  {availableUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.username}</option>
+                  ))}
+                </select>
+              </div>
             </nav>
           </div>
         </header>

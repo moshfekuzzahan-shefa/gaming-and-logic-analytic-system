@@ -1,28 +1,57 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '../context/UserContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { ArrowLeft, Play, Terminal, Award, CheckCircle } from 'lucide-react';
 
-const BOILERPLATE = `#include <iostream>
-using namespace std;
-
-int main() {
-    // Write your code here
-    
-    return 0;
+interface Level {
+  id: number;
+  name: string;
+  difficulty_level: string;
+  problem_statement: string;
+  boilerplate_code: string;
+  expected_output: string;
+  reward_xp: number;
+  category?: {
+    name: string;
+  };
 }
-`;
 
 export default function LevelExecution() {
+  const { userId } = useUser();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [code, setCode] = useState(BOILERPLATE);
+  
+  const [level, setLevel] = useState<Level | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [code, setCode] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [output, setOutput] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [earnedXP, setEarnedXP] = useState(0);
 
+  useEffect(() => {
+    const fetchLevel = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/levels/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLevel(data);
+          setCode(data.boilerplate_code || '');
+        }
+      } catch (error) {
+        console.error('Error fetching level:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLevel();
+  }, [id]);
+
   const handleRunCode = async () => {
+    if (!level) return;
+    
     setIsExecuting(true);
     setOutput('Compiling and executing...');
     
@@ -33,7 +62,7 @@ export default function LevelExecution() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code,
-          expectedOutput: 'Hello World' // Dummy expected output
+          expectedOutput: level.expected_output
         })
       });
 
@@ -48,26 +77,26 @@ export default function LevelExecution() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              user_id: 1, // Dummy user ID
+              user_id: userId,
               level_id: Number(id),
               time_taken: data.timeTakenMs,
               is_success: true,
-              score: 50 // Dummy score
+              score: level.reward_xp
             })
           }).catch(console.error);
 
-          setEarnedXP(50);
+          setEarnedXP(level.reward_xp);
           setShowModal(true);
         }
       } else {
         // Fallback behavior if backend isn't running
         setTimeout(() => {
           if (code.includes('cout')) {
-             setOutput('Hello World');
-             setEarnedXP(50);
-             setShowModal(true);
+            setOutput(level.expected_output);
+            setEarnedXP(level.reward_xp);
+            setShowModal(true);
           } else {
-             setOutput('Error: Output did not match expected.');
+            setOutput('Error: Output did not match expected.');
           }
         }, 1000);
       }
@@ -76,11 +105,11 @@ export default function LevelExecution() {
       console.warn("Backend not reachable, running mock fallback");
       setTimeout(() => {
         if (code.includes('cout')) {
-           setOutput('Hello World');
-           setEarnedXP(50);
-           setShowModal(true);
+          setOutput(level.expected_output);
+          setEarnedXP(level.reward_xp);
+          setShowModal(true);
         } else {
-           setOutput('Error: Output did not match expected.');
+          setOutput('Error: Output did not match expected.');
         }
       }, 1000);
     } finally {
@@ -88,12 +117,15 @@ export default function LevelExecution() {
     }
   };
 
+  if (loading) return <div className="text-center py-20 animate-pulse text-primary-400">Loading Module...</div>;
+  if (!level) return <div className="text-center py-20 text-gray-400">Level not found.</div>;
+
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col animate-fade-in">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
         >
@@ -101,15 +133,15 @@ export default function LevelExecution() {
           <span>Back to Dashboard</span>
         </button>
 
-        <button 
+        <button
           onClick={handleRunCode}
           disabled={isExecuting}
           className={`btn-primary flex items-center gap-2 ${isExecuting ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {isExecuting ? (
-             <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+            <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
           ) : (
-             <Play size={18} />
+            <Play size={18} />
           )}
           {isExecuting ? 'Running...' : 'Run Code'}
         </button>
@@ -117,16 +149,20 @@ export default function LevelExecution() {
 
       {/* Main Content Split */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-        
+
         {/* Left Panel: Instructions & Output */}
         <div className="flex flex-col gap-6 overflow-hidden">
-          
+
           <div className="glass-card p-6 flex-1 overflow-y-auto">
-            <h2 className="text-2xl font-bold text-accent-400 mb-4">Level {id}: Hello World</h2>
+            <h2 className="text-2xl font-bold text-accent-400 mb-4">{level.name}</h2>
             <div className="prose prose-invert max-w-none text-gray-300">
-              <p>Welcome to your first challenge! Let's get familiar with the syntax.</p>
-              <h3 className="text-white mt-6 mb-2">Task:</h3>
-              <p>Print exactly <code className="bg-dark-900 px-2 py-1 rounded text-primary-400">Hello World</code> to the standard output.</p>
+              <p>Category: <span className="text-primary-400 font-semibold">{level.category?.name || 'General'}</span></p>
+              <p>Difficulty: <span className="bg-dark-900 px-2 py-1 rounded text-xs border border-white/5">{level.difficulty_level}</span></p>
+
+              <h3 className="text-white mt-6 mb-2">Instructions:</h3>
+              <p className="text-gray-100 leading-relaxed bg-dark-800/50 p-4 rounded-lg border border-white/5">
+                {level.problem_statement}
+              </p>
             </div>
           </div>
 
@@ -167,20 +203,20 @@ export default function LevelExecution() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="glass-card p-8 max-w-sm w-full text-center relative overflow-hidden transform scale-100 transition-all shadow-[0_0_50px_rgba(106,13,173,0.4)] border border-primary-500/30">
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent-500/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-            
+
             <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
               <CheckCircle className="text-green-400 w-10 h-10" />
             </div>
-            
+
             <h3 className="text-3xl font-bold text-white mb-2">Level Passed!</h3>
             <p className="text-gray-300 mb-6">Excellent work. Your logic was flawless.</p>
-            
+
             <div className="bg-dark-800 rounded-lg p-4 mb-8 flex justify-center items-center gap-3 border border-white/5">
               <Award className="text-accent-400" />
               <span className="font-bold text-xl text-primary-400">+{earnedXP} XP</span>
             </div>
 
-            <button 
+            <button
               onClick={() => {
                 setShowModal(false);
                 navigate('/');
