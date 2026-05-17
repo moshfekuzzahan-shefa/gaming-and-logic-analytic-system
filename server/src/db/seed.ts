@@ -1,4 +1,5 @@
 import { db } from './index';
+import bcrypt from 'bcryptjs';
 import { users, categories, levels, questions, attempts, achievements, userAchievements, friendships } from './schema/index';
 
 async function main() {
@@ -34,74 +35,74 @@ async function main() {
   // 2. Create Levels (10+ realistic levels)
   await db.insert(levels).values([
     // Data Structures
-    { 
-      name: 'Reverse a Linked List', 
-      difficulty_level: 'Beginner', 
+    {
+      name: 'Reverse a Linked List',
+      difficulty_level: 'Beginner',
       category_id: dsCategory.id,
       reward_xp: 100,
       expected_output: '5 4 3 2 1',
       problem_statement: 'Write a program that simulates reversing a singly linked list with values 1 through 5. Your output should be the space-separated values in reverse order.',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Mock linked list reversal output\n    cout << "5 4 3 2 1";\n    return 0;\n}'
     },
-    { 
-      name: 'Binary Tree Inorder Traversal', 
-      difficulty_level: 'Intermediate', 
+    {
+      name: 'Binary Tree Inorder Traversal',
+      difficulty_level: 'Intermediate',
       category_id: dsCategory.id,
       reward_xp: 200,
       expected_output: '1 2 3 4 5',
       problem_statement: 'Implement an inorder traversal for a binary search tree containing nodes 1, 2, 3, 4, 5. Output the result as space-separated integers.',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Output the inorder traversal\n    cout << "1 2 3 4 5";\n    return 0;\n}'
     },
-    { 
-      name: 'Implement a Min-Heap', 
-      difficulty_level: 'Advanced', 
+    {
+      name: 'Implement a Min-Heap',
+      difficulty_level: 'Advanced',
       category_id: dsCategory.id,
       reward_xp: 400,
       expected_output: 'Min: 10',
       problem_statement: 'Build a min-heap structure. After inserting values 10, 20, 30, and 5, performing a "getMin" should return 10 (assuming 5 was removed). Output exactly: Min: 10',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Min: 10";\n    return 0;\n}'
     },
-    { 
-      name: 'Graph Cycle Detection', 
-      difficulty_level: 'Advanced', 
+    {
+      name: 'Graph Cycle Detection',
+      difficulty_level: 'Advanced',
       category_id: dsCategory.id,
       reward_xp: 500,
       expected_output: 'Cycle Detected',
       problem_statement: 'Given a directed graph with an edge from A to B and B to A, detect the cycle. Output: Cycle Detected',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Cycle Detected";\n    return 0;\n}'
     },
-    
+
     // Algorithms
-    { 
-      name: 'Bubble Sort Basics', 
-      difficulty_level: 'Beginner', 
+    {
+      name: 'Bubble Sort Basics',
+      difficulty_level: 'Beginner',
       category_id: algoCategory.id,
       reward_xp: 80,
       expected_output: 'Sorted',
       problem_statement: 'Implement the Bubble Sort algorithm to sort an array of integers. When complete, output the word: Sorted',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Sorted";\n    return 0;\n}'
     },
-    { 
-      name: 'Merge Sort implementation', 
-      difficulty_level: 'Intermediate', 
+    {
+      name: 'Merge Sort implementation',
+      difficulty_level: 'Intermediate',
       category_id: algoCategory.id,
       reward_xp: 250,
       expected_output: 'Merge Sort Complete',
       problem_statement: 'Implement the Divide and Conquer Merge Sort algorithm. Output exactly: Merge Sort Complete',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Merge Sort Complete";\n    return 0;\n}'
     },
-    { 
-      name: 'Dijkstra Pathfinding', 
-      difficulty_level: 'Advanced', 
+    {
+      name: 'Dijkstra Pathfinding',
+      difficulty_level: 'Advanced',
       category_id: algoCategory.id,
       reward_xp: 450,
       expected_output: 'Shortest Path: 15',
       problem_statement: 'Find the shortest path between Node A and Node E in the provided weighted graph using Dijkstra\'s algorithm. Output exactly: Shortest Path: 15',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Shortest Path: 15";\n    return 0;\n}'
     },
-    { 
-      name: 'Knapsack Problem (DP)', 
-      difficulty_level: 'Advanced', 
+    {
+      name: 'Knapsack Problem (DP)',
+      difficulty_level: 'Advanced',
       category_id: algoCategory.id,
       reward_xp: 500,
       expected_output: 'Max Value: 220',
@@ -110,27 +111,27 @@ async function main() {
     },
 
     // Logic Puzzles
-    { 
-      name: 'Tower of Hanoi', 
-      difficulty_level: 'Intermediate', 
+    {
+      name: 'Tower of Hanoi',
+      difficulty_level: 'Intermediate',
       category_id: logicCategory.id,
       reward_xp: 200,
       expected_output: 'Solved with 7 moves',
       problem_statement: 'Write a recursive function to solve the Tower of Hanoi for 3 disks. Output the minimum number of moves required. Output exactly: Solved with 7 moves',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Solved with 7 moves";\n    return 0;\n}'
     },
-    { 
-      name: 'N-Queens Challenge', 
-      difficulty_level: 'Advanced', 
+    {
+      name: 'N-Queens Challenge',
+      difficulty_level: 'Advanced',
       category_id: logicCategory.id,
       reward_xp: 600,
       expected_output: '92 solutions found',
       problem_statement: 'Find all possible ways to place 8 queens on an 8x8 chessboard such that no two queens threaten each other. Output exactly: 92 solutions found',
       boilerplate_code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "92 solutions found";\n    return 0;\n}'
     },
-    { 
-      name: 'Sudoku Validator', 
-      difficulty_level: 'Intermediate', 
+    {
+      name: 'Sudoku Validator',
+      difficulty_level: 'Intermediate',
       category_id: logicCategory.id,
       reward_xp: 150,
       expected_output: 'Valid',
@@ -152,16 +153,21 @@ async function main() {
   const allAchievements = await db.select().from(achievements);
 
   // 4. Create Users
+  const defaultPasswordHash = await bcrypt.hash('password123', 10);
+
   const [user1] = await db.insert(users).values({
     username: 'EliteCoder99',
     email: 'elite99@example.com',
+    passwordHash: defaultPasswordHash,
+    role: 'admin',
     current_streak: 25,
-    join_date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 
+    join_date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
   } as any).returning();
 
   const [user2] = await db.insert(users).values({
     username: 'SyntaxTerror',
     email: 'syntax@example.com',
+    passwordHash: defaultPasswordHash,
     current_streak: 12,
     join_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
   } as any).returning();
@@ -169,6 +175,7 @@ async function main() {
   const [user3] = await db.insert(users).values({
     username: 'LogicMaster',
     email: 'logic@example.com',
+    passwordHash: defaultPasswordHash,
     current_streak: 45,
     join_date: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000),
   } as any).returning();
@@ -176,6 +183,7 @@ async function main() {
   const [user4] = await db.insert(users).values({
     username: 'NewbieDev',
     email: 'newbie@example.com',
+    passwordHash: defaultPasswordHash,
     current_streak: 2,
     join_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
   } as any).returning();

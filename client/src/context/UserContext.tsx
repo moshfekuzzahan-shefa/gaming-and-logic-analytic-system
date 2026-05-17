@@ -1,71 +1,108 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface User {
-  id: number;
-  username: string;
-}
-
 interface UserContextType {
-  userId: number;
-  username: string;
-  setUserId: (id: number) => void;
-  availableUsers: User[];
+  userId: number | null;
+  username: string | null;
+  token: string | null;
+  role: string | null;
   loading: boolean;
+  login: (token: string, user: { id: number; username: string; role: string }) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to 1, but we will try to find a valid user from the DB
-  const [userId, setUserIdInternal] = useState<number>(1);
-  const [username, setUsername] = useState<string>('EliteCoder99');
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const setUserId = (id: number) => {
-    const user = availableUsers.find(u => u.id === id);
-    if (user) {
-      setUserIdInternal(user.id);
-      setUsername(user.username);
-      localStorage.setItem('activeUserId', String(user.id));
-    }
+  // Helper to log in a user and persist session
+  const login = (newToken: string, user: { id: number; username: string; role: string }) => {
+    setToken(newToken);
+    setUserId(user.id);
+    setUsername(user.username);
+    setRole(user.role);
+    localStorage.setItem('authToken', newToken);
+    localStorage.setItem('authUserId', String(user.id));
+    localStorage.setItem('authUsername', user.username);
+    localStorage.setItem('authRole', user.role);
+  };
+
+  // Helper to log out and clear persistent session
+  const logout = () => {
+    setToken(null);
+    setUserId(null);
+    setUsername(null);
+    setRole(null);
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUserId');
+    localStorage.removeItem('authUsername');
+    localStorage.removeItem('authRole');
   };
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const verifySession = async () => {
+      const savedToken = localStorage.getItem('authToken');
+      const savedUserId = localStorage.getItem('authUserId');
+      const savedUsername = localStorage.getItem('authUsername');
+      const savedRole = localStorage.getItem('authRole');
+
+      if (!savedToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // We can fetch from the leaderboard or a dedicated users endpoint
-        // Since we don't have a /api/users, we'll use leaderboard which returns users
-        const res = await fetch('http://localhost:5000/api/leaderboard');
+        // Double-check session validity with the backend
+        const res = await fetch('http://localhost:5000/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${savedToken}`
+          }
+        });
+
         if (res.ok) {
           const data = await res.json();
-          if (data && data.length > 0) {
-            setAvailableUsers(data.map((u: any) => ({ id: u.id, username: u.username })));
-            
-            // Check if we have a saved ID in localStorage
-            const savedId = localStorage.getItem('activeUserId');
-            const initialUser = savedId 
-              ? data.find((u: any) => u.id === parseInt(savedId)) 
-              : data[0];
-
-            if (initialUser) {
-              setUserIdInternal(initialUser.id);
-              setUsername(initialUser.username);
-            }
+          if (data && data.user) {
+            setToken(savedToken);
+            setUserId(data.user.id);
+            setUsername(data.user.username);
+            setRole(data.user.role);
+          } else {
+            logout();
           }
+        } else {
+          // Token is invalid or expired
+          logout();
         }
       } catch (err) {
-        console.warn('Failed to fetch users for context, using defaults');
+        console.warn('Backend verification failed, attempting local cache fallback');
+        // Fallback to local cache in offline development mode
+        if (savedUserId && savedUsername && savedRole) {
+          setToken(savedToken);
+          setUserId(parseInt(savedUserId));
+          setUsername(savedUsername);
+          setRole(savedRole);
+        } else {
+          logout();
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
+    verifySession();
   }, []);
 
+  const isAuthenticated = !!token && userId !== null;
+  const isAdmin = role?.toLowerCase() === 'admin';
+
   return (
-    <UserContext.Provider value={{ userId, username, setUserId, availableUsers, loading }}>
+    <UserContext.Provider value={{ userId, username, token, role, loading, login, logout, isAuthenticated, isAdmin }}>
       {children}
     </UserContext.Provider>
   );
