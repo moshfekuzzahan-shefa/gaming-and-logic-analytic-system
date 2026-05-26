@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { Users, Code, Activity, Terminal, ShieldCheck, Database, RefreshCw, AlertTriangle } from 'lucide-react';
+import UsersTab from '../components/admin/UsersTab';
+import LevelsTab from '../components/admin/LevelsTab';
 
 interface Stats {
   totalUsers: number;
@@ -24,6 +26,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'users' | 'levels'>('telemetry');
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
     '[INIT] Initializing Administrative Control Panel...',
     '[SEC] Securing logic decryption bridges...',
@@ -136,8 +139,64 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-white/10 gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('telemetry')}
+          className={`pb-4 px-6 text-sm font-semibold tracking-wider transition-all relative cursor-pointer ${
+            activeTab === 'telemetry' 
+              ? 'text-accent-400 font-bold' 
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Activity size={16} />
+            <span>System Telemetry</span>
+          </div>
+          {activeTab === 'telemetry' && (
+            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent-400 shadow-[0_0_10px_rgba(0,240,255,0.8)]"></span>
+          )}
+        </button>
+        
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`pb-4 px-6 text-sm font-semibold tracking-wider transition-all relative cursor-pointer ${
+            activeTab === 'users' 
+              ? 'text-accent-400 font-bold' 
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Users size={16} />
+            <span>User Management</span>
+          </div>
+          {activeTab === 'users' && (
+            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent-400 shadow-[0_0_10px_rgba(0,240,255,0.8)]"></span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('levels')}
+          className={`pb-4 px-6 text-sm font-semibold tracking-wider transition-all relative cursor-pointer ${
+            activeTab === 'levels' 
+              ? 'text-accent-400 font-bold' 
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Code size={16} />
+            <span>Level Editor</span>
+          </div>
+          {activeTab === 'levels' && (
+            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent-400 shadow-[0_0_10px_rgba(0,240,255,0.8)]"></span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'telemetry' ? (
+        <>
+          {/* KPI Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Total Users */}
         <div className="glass-card p-6 border border-white/5 relative group overflow-hidden">
@@ -291,6 +350,12 @@ export default function AdminDashboard() {
         </div>
 
       </div>
+        </>
+      ) : activeTab === 'users' ? (
+        <UsersTab />
+      ) : (
+        <LevelsTab />
+      )}
 
     </div>
   );
